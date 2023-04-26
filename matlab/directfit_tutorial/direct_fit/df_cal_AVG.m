@@ -111,7 +111,7 @@ end
 ampsamprate = DF_PARAMS.ampsamprate;
 respsamprate = DF_PARAMS.respsamprate;
 ndata_files = length(DDS);
-
+disp(ndata_files)
 stim_avg = zeros(nband, 1);
 count_avg = 0;
 tot_trials = 0;
@@ -146,6 +146,7 @@ for n = 1:ndata_files
     else
         psth_rec = rawResp;
     end
+
     nt = min(size(stim_env, 2), size(psth_rec,2));
     % take logrithm of data based on lin_flag 
     if lin_flag == 0
@@ -173,12 +174,10 @@ for n = 1:ndata_files
         
         psth{n} = psth_rec(1:nt);
     end
-    
     tot_trials = tot_trials + nt + sil_window;
     
     % calculate the total spike/response avg.
     Avg_psth = Avg_psth + sum(psth{n}(1:nt));
-    
     timevary_psth = [timevary_psth size(psth{n},2)];
     
     % clear workspace
@@ -251,6 +250,7 @@ if psth_option == 0
 else
     Avg_psth_out = whole_psth;
 end
+
 Avg_psth = whole_psth;
 save(fullfile(outputPath,'stim_avg.mat'), 'stim_avg', 'Avg_psth','constmeanrate');
 

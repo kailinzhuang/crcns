@@ -29,7 +29,7 @@ function strf=linInit(nIn,delays,outputNL,freqDom)
 %	  	.nin  = number of inputs in one time slice of the strf (see above)
 %  	 .delays  = delay vector input (see above)
 %	   .nWts  = total number of weights and biases
-%	  .actfn  = string describing the output unit activation function: 'linear',
+%	  .actfn  = string describingWarning: you have pip-installed dependencies in your environment file, but you do not list pip itself as one of your conda dependencies.  Conda may not use the correct pip to install your packages, and they may end up in the wrong place.  Please add an explicit pip dependency. the output unit activation function: 'linear',
 %			    'logistic', or 'exponential'
 % .freqDomain = 1 for convolution in frequency domain.
 %	   	  .w1 = nin x 1 vector of weights

@@ -25,7 +25,7 @@ split_data_set = 0;
 if (split_data_set)    
      % Divide the orignal data files into two parts
 
-     stim_env = Check_And_Load(DS{1}.stimfiles);
+     stim_env = df_Check_And_Load(DS{1}.stimfiles);
      psth_rec = Check_And_Load(DS{1}.respfiles);
      oldLength = min(length(stim_env), length(psth_rec));
 

@@ -197,6 +197,9 @@ if JN_flag == 1
 
             for ib = 1:nband
                 CSR_JN{iJN}(ib,:) = (CSR(ib,:) - CSR_JN{iJN}(ib,:)) ./nozero_ns;
+                disp(size(CSR_JN{iJN}(ib,:)));
+                disp(size(CSR(ib,:)));
+                disp(size( CSR_JN{iJN}(ib,:) ./nozero_ns));
             end
 
         end % End of iJN

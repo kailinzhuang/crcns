@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   # Core scientific python
-  - python=3
+  - python=3.9
   - numpy
   - matplotlib
   - pandas
@@ -11,6 +11,7 @@ dependencies:
   - scipy
   - scikit-image
   - scikit-learn
+  - pip
 
 
   # Jupyter Environment

@@ -26,111 +26,6 @@ fet
 
 9431706d-7860-0410-b998-d7eeeacd3889
 
-STC_example.m
-file
-
-
-
-
-2011-06-24T22:31:26.000000Z
-739373526a21f412ab2e0f6d5231c654
-2010-10-26T13:20:49.078661Z
-292
-fet
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-7341
-
-directfit_exercise.m
-file
-
-
-
-
-2011-06-24T22:31:26.000000Z
-521f76ef3498084ff513b5e266a63c60
-2010-09-16T06:23:00.888728Z
-263
-fet
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-2274
-
-preprocessing
-dir
-
-STC_tutorial_solution.m
-file
-
-
-
-
-2011-06-24T22:31:26.000000Z
-19e3785b0e25513302f35809113fbac4
-2010-10-26T13:20:49.078661Z
-292
-fet
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-9905
-
 Ecog_strf.m
 file
 
@@ -164,6 +59,40 @@ fet
 
 
 1803
+
+STC_example.m
+file
+
+
+
+
+2011-06-24T22:31:26.000000Z
+739373526a21f412ab2e0f6d5231c654
+2010-10-26T13:20:49.078661Z
+292
+fet
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7341
 
 STC_tutorial.m
 file
@@ -199,6 +128,111 @@ fet
 
 9812
 
+STC_tutorial_exercise.m
+file
+
+
+
+
+2011-06-24T22:31:26.000000Z
+ad8a575a1b7a8a9cfd4788a63f1af2de
+2010-12-02T19:47:54.390846Z
+381
+fet
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+6500
+
+STC_tutorial_solution.m
+file
+
+
+
+
+2011-06-24T22:31:26.000000Z
+19e3785b0e25513302f35809113fbac4
+2010-10-26T13:20:49.078661Z
+292
+fet
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+9905
+
+direct_fit
+dir
+
+directfit_exercise.m
+file
+
+
+
+
+2011-06-24T22:31:26.000000Z
+521f76ef3498084ff513b5e266a63c60
+2010-09-16T06:23:00.888728Z
+263
+fet
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2274
+
 directfit_exercise_partial_solution.m
 file
 
@@ -232,9 +266,6 @@ fet
 
 
 6324
-
-validation
-dir
 
 directfit_exercise_solution.m
 file
@@ -276,7 +307,7 @@ file
 
 
 
-2011-06-24T22:31:26.000000Z
+2023-04-24T22:24:49.950000Z
 98b9fb494fea67b6536cfff61029a9e7
 2010-10-06T20:46:48.891529Z
 278
@@ -304,43 +335,12 @@ fet
 
 8179
 
-direct_fit
+preprocessing
 dir
 
 strflab
 dir
 
-STC_tutorial_exercise.m
-file
-
-
-
-
-2011-06-24T22:31:26.000000Z
-ad8a575a1b7a8a9cfd4788a63f1af2de
-2010-12-02T19:47:54.390846Z
-381
-fet
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-6500
+validation
+dir
 

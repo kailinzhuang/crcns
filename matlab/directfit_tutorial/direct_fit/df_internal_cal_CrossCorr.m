@@ -9,6 +9,7 @@ if ~exist('do_fourier','var')
 end
 if do_fourier
     for ib1 = 1:nband
+        
         CSR_JN(ib1,:) = xcorr(stimval(ib1, :), psthval, twin);
     end
 else
