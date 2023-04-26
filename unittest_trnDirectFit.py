@@ -1,5 +1,5 @@
 
-from strfpy import trnDirectFit
+from strfpy.trnDirectFit import trnDirectFit
 
 if __name__ == "__main__":
     import pickle

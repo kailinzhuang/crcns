@@ -11,7 +11,7 @@ from .calcAvg import df_cal_AVG
 from .calcAutoCorr import df_cal_AutoCorr, df_cal_AutoCorrSep
 from .calcCrossCorr import df_cal_CrossCorr, df_fft_AutoCrossCorr
 from .calcStrf import df_cal_Strf
-from .DirectFit import df_load_function_text
+#from .DirectFit import df_load_function_text
 
 
 def calcStrfs(params, CS, CSR, CSR_JN):

@@ -76,7 +76,7 @@ def trnDirectFit(modelParams=None, datIdx=None, options=None, globalDat=None, *a
     strfFiles = direct_fit(params)
     
     # get computed stim and response means
-    svars = np.load(os.path.join(options['outputDir'], 'stim_avg.mat'), allow_pickle=True)
+    svars = np.load(os.path.join(options['outputDir'], 'stim_avg.npz'), allow_pickle=True)
     stimAvg = svars['stim_avg']
     respAvg = svars['constmeanrate']
     tvRespAvg = svars['Avg_psth']

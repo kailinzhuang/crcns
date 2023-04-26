@@ -187,8 +187,8 @@ def direct_fit(params):
 
         if cache_crosscorr:
             CSR, CSR_JN, errFlg = df_do_locally_cached_calc_checksum_known(df_get_local_cache_dir(), 'df_cal_CrossCorr', checksum_CrossCorr, DS, stim_avg, avg_psth, psth, twindow, NBAND)
-            save(os.path.join(outputPath, 'StimResp_crosscorr.mat'), 'CSR')
-            save(os.path.join(outputPath, 'SR_crosscorrJN.mat'), 'CSR_JN')
+            np.save(os.path.join(outputPath, 'StimResp_crosscorr.mat'), 'CSR')
+            np.save(os.path.join(outputPath, 'SR_crosscorrJN.mat'), 'CSR_JN')
         else:
             CSR, CSR_JN, errFlg = df_cal_CrossCorr(DS, stim_avg, avg_psth, psth, twindow, NBAND)
 
@@ -201,7 +201,7 @@ def direct_fit(params):
 
     strfFiles = [None]*len(Tol_val)
     for k in range(len(Tol_val)):
-        fname = params.outputPath + '/strfResult_Tol' + str(k+1) + '.mat'
+        fname = os.path.join(outputPath, '/strfResult_Tol', str(k+1), '.npy')
         strfFiles[k] = fname
 
     return strfFiles

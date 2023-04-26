@@ -43,27 +43,23 @@ def df_cal_Strf(params, fstim, fstim_spike, stim_spike_JNf, stim_size, stim_spik
 
         nc = 1
         # cross_vect = np.zeros(nb, dtype=np.complex)
-        cross_vectJN = np.zeros((nJN, nb), dtype=np.complex)
+        cross_vectJN = np.zeros((nJN, nb), dtype=np.complex_)
 
         for fb_indx in range(nb):
             cross_vect[fb_indx] = fstim_spike[fb_indx,iff]
             for iJN in range(nJN):
-                nstim = len(durs)
-                jn2_index = np.mod(np.arange(1, nstim) + iJN, nstim) # All but the stim after the current stim; used in double-jackknife
-                n_jn2 = np.mod(iJN, nstim)
-                cross_vectJN[iJN,fb_indx] = (np.sum(durs)*fstim_spike[fb_indx,iff] - np.sum(durs[np.concatenate([np.arange(0,iJN), np.arange(iJN+1, nstim)])])*stim_spike_JNf[fb_indx,iff,iJN])/durs[iJN] - np.sum(durs[jn2_index])*stim_spike_JNf[fb_indx,iff,n_jn2]/durs[n_jn2]
+                cross_vectJN[iJN,fb_indx] = stim_spike_JNf[fb_indx,iff,iJN]
 
         # do an svd decomposition
         ranktest = np.zeros(1)
-        ranktest[0] = np.linalg.matrix_rank(stim_mat, ranktol)
+        ranktest = np.linalg.matrix_rank(stim_mat, ranktol)
         u,s,v = np.linalg.svd(stim_mat)
         tots = s[0]
-        cums = np.zeros((nb, nb+1))
         cums[iff,1] = s[0] 
         
-        for ii in range(1, nb):
+        for ii in range(nb):
             tots = tots + s[ii]
-            cums[iff,ii+1] = cums[iff,ii] + s[ii]
+            cums[iff,ii] = cums[iff,ii] + s[ii]
 
         is_mat = np.zeros((nb, nb))
 
@@ -74,21 +70,19 @@ def df_cal_Strf(params, fstim, fstim_spike, stim_spike_JNf, stim_size, stim_spik
                 is_mat[ii,ii] = 1.0/s[ii]
 
         h = v @ is_mat @ (u.T @ cross_vect)
-        hJN = np.zeros((nJN, nb), dtype=np.complex)
+        hJN = np.zeros((nJN, nb), dtype=np.complex_)
 
         for iJN in range(nJN):
             hJN[iJN,:] = np.transpose(v @ is_mat @ (u.T @ cross_vectJN[iJN,:]))
 
-        ffor = np.zeros((nb, nf+1), dtype=np.complex)
-        fforJN = np.zeros((nb, nf+1, nJN), dtype=np.complex)
-
+  
         for ii in range(nb):
             ffor[ii,iff] = h[ii]
             fforJN[ii,iff,:] = hJN[:,ii]
 
             if iff != 0:
-                ffor[ii,nf+2-iff] = np.conj(h[ii])
-                fforJN[ii,nf+2-iff,:] = np.conj(hJN[:,ii])
+                ffor[ii,nf] = np.conj(h[ii])
+                fforJN[ii,nf,:] = np.conj(hJN[:,ii])
 
 
     nt2 = (nt-1)//2

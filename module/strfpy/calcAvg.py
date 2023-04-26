@@ -174,7 +174,7 @@ def df_cal_AVG(DDS, PARAMS, nband=None, psth_option=None, lin_flag=1, sil_window
 
     # save the stim_avg into the data file
     currentPath = os.getcwd()
-    outputPath = DF_PARAMS.get('outputPath', None)
+    outputPath = DF_PARAMS['outputPath']
     if outputPath is not None:
         os.chdir(outputPath)
     else:
@@ -192,7 +192,7 @@ def df_cal_AVG(DDS, PARAMS, nband=None, psth_option=None, lin_flag=1, sil_window
 
     Avg_psth = whole_psth
 
-    np.savez_compressed(os.path.join(outputPath, 'stim_avg.nps'), stim_avg=stim_avg, Avg_psth=Avg_psth, constmeanrate=constmeanrate)
+    np.savez_compressed(os.path.join(outputPath, 'stim_avg.npz'), stim_avg=stim_avg, Avg_psth=Avg_psth, constmeanrate=constmeanrate)
 
     flat_psth = [item for sublist in psth for item in sublist]
     return stim_avg, Avg_psth_out, psth, errFlg

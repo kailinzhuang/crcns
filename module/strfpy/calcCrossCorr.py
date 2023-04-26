@@ -247,8 +247,8 @@ def df_fft_AutoCrossCorr(stim, stim_spike, CSR_JN, TimeLag, NBAND, nstd_val):
     
     stim_spike_JNvf = np.zeros((nb, nf), dtype=complex)
     fstim = np.zeros(stim.shape)
-    stim_spike_sf = np.zeros((nb, nt, nJN))
-    fstim_spike = stim_spike_sf
+    stim_spike_sf = np.zeros((nb, nt),dtype=complex)#, nJN))
+    #fstim_spike = stim_spike_sf
     
     for ib in range(nb):
         itstart = 0
@@ -268,13 +268,26 @@ def df_fft_AutoCrossCorr(stim, stim_spike, CSR_JN, TimeLag, NBAND, nstd_val):
             else:
                 below = 0
                 itstart = 0
-            if below > hcuttoff:
-                itend = it - below
-                break
-        fstim[ib,itstart:itend] = np.real(np.fft.ifft(stim_spikef[ib,itstart:itend]))
-        fstim_spike[ib,itstart:itend] = np.real(np.fft.ifft(stim_spike_JNf[ib,itstart:itend,:], axis=1))
-    
+            stim_spike_sf[ib,it] = rmean + j*imean
+            #fstim[ib,itstart:itend] = np.real(np.fft.ifft(stim_spikef[ib,itstart:itend]))
+            #fstim_spike[ib,itstart:itend] = np.real(np.fft.ifft(stim_spike_JNf[ib,itstart:itend,:], axis=1))
+        for it in range(nf):
+            if it > itstart:
+                expval = np.exp(-0.5*(it-itstart)**2/(itend-itstart)**2)
+                stim_spike_sf[ib,it] = stim_spike_sf[ib,it]*expval
+                stim_spike_JNf[ib,it,:] = stim_spike_JNf[ib,it,:]*expval
+            if it > 0:
+                stim_spike_sf[ib,nt-it] = np.conj(stim_spike_sf[ib,it])
+                stim_spike_JNf[ib,nt-it,:] = np.conj(stim_spike_JNf[ib,it,:])
     fstim_spike = stim_spike_sf
+
+    nt2=int((nt-1)/2)
+    for i in range(ncorr):
+        sh_stim = np.zeros(nt)
+        w_stim =  stim[i,:]*w.T
+        sh_stim[:nt2+1]=w_stim[nt2:nt]
+        sh_stim[nt2:nt]=w_stim[:nt2+1]
+        fstim[i,:] = np.fft.fft(sh_stim)
     return fstim, fstim_spike, stim_spike_JNf
 
 
