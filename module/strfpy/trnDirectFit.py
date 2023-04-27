@@ -2,6 +2,7 @@ import tempfile
 import os
 import numpy as np
 from scipy.signal.windows import dpss
+from scipy.signal import detrend
 from .strfSetup import strflab2DS
 from .DirectFit import direct_fit
 
@@ -87,11 +88,11 @@ def trnDirectFit(modelParams=None, datIdx=None, options=None, globalDat=None, *a
     halfIndx = params['TimeLag'] + 1
     startIndx = halfIndx + round(np.min(modelParams['delays']))
     endIndx = halfIndx + round(np.max(modelParams['delays']))
-    strfRng = range(startIndx, endIndx+1)
+    strfRng = range(startIndx-1, endIndx)
     
     # subtract mean off of stimulus (because direct fit does this)
-    for k in range(datIdx['stim'].shape[0]):
-        datIdx['stim'][k,:] -= stimAvg
+    for k in range(int(globDat['stim'].shape[0])):
+        globDat['stim'][k,:] -= stimAvg.T
     
     # compute information values for each set of jackknifed strfs per tolerance value
     print('Finding best STRF by computing info values across sparseness and tolerance values...')
@@ -100,7 +101,7 @@ def trnDirectFit(modelParams=None, datIdx=None, options=None, globalDat=None, *a
     bestTol = -1
     bestSparseness = -1
     for k in range(len(strfFiles)):    # for each tolerance value
-        svars = np.load(strfFiles[k], allow_pickle=True).item()
+        svars = np.load(strfFiles[k], allow_pickle=True)
         
         strfsJN = svars['STRFJN_Cell']
         strfsJN_std = svars['STRFJNstd_Cell']
@@ -139,7 +140,7 @@ def trnDirectFit(modelParams=None, datIdx=None, options=None, globalDat=None, *a
                 mresp = mresp + tvRespAvg[p, :len(mresp)]
 
             #compute coherence and info across pairs
-            cStruct = compute_coherence_mean(rv(mresp), rv(rresp), options['respSampleRate'], options['infoFreqCutoff'], options['infoWindowSize'])
+            cStruct = compute_coherence_mean(mresp, rresp, options['respSampleRate'], options['infoFreqCutoff'], options['infoWindowSize'])
             infoSum = infoSum + cStruct['info']
         
         avgInfo = infoSum / numJNStrfs
@@ -191,7 +192,7 @@ def df_fast_filter_filter(forward, forwardJN_std, nstd):
 def conv_strf(allstim, delays, strf, groupIndex):
     nDatasets = len(np.unique(groupIndex))
     timeLen = allstim.shape[0]
-    a = np.zeros((timeLen, 1))
+    a = np.zeros((timeLen, 1), dtype=complex)
     
     for k in range(nDatasets):
         rng = np.where(groupIndex == k+1)[0]
@@ -202,10 +203,10 @@ def conv_strf(allstim, delays, strf, groupIndex):
 
             thisshift = delays[ti]
             if thisshift >= 0:
-                a[soff+thisshift+1:] = a[soff+thisshift+1:] + at[:-thisshift]
+                a[soff+thisshift:,0] += at[:timeLen-thisshift]
             else:
                 offset = thisshift % timeLen
-                a[soff:offset] = a[soff:offset] + at[-thisshift:]
+                a[soff:offset] += at[-thisshift:]
     
     return a.T[0]
 
@@ -275,17 +276,18 @@ def compute_coherence_mean(modelResponse, psth, sampleRate, freqCutoff=-1, windo
 def rv(a):
     b = a
     sz = np.shape(a)
-    isvect = (sz[0] == 1) or (sz[1] == 1)
+    isvect = (sz[0] == 0) or (sz[1] == 0)
+    
     if (isvect):
-        if (sz[0] == 1):
+        if (sz[0] == 0):
             b = a.T
     return b
 
 
 
-def df_mtparam(P):
+def df_mtparam(*varg):
+    P=varg
     nargs = len(P)
-
     x = P[0]
     if nargs < 2 or P[1] is None:
         nFFT = 1024
@@ -298,7 +300,7 @@ def df_mtparam(P):
     if nargs < 4 or P[3] is None:
         WinLength = nFFT
     else:
-        WinLength = P[3]
+        WinLength = P[3], nFFT, Fs, WinLength, nOverlap, NW, Detrend, nTapers
     if nargs < 5 or P[4] is None:
         nOverlap = WinLength // 2
     else:
@@ -348,8 +350,8 @@ def df_mtparam(P):
 
     f = (select - 1) * Fs / nFFT
 
-    return x, nFFT, Fs, WinLength, nOverlap, NW, Detrend, nTapers, nChannels, nSamples, nFFTChunks, winstep, select, nFreqBins, f, t
-
+    # return x, nFFT, Fs, WinLength, nOverlap, NW, Detrend, nTapers, nChannels, nSamples, nFFTChunks, winstep, select, nFreqBins, f, t
+    return x, nFFT, Fs, WinLength, nOverlap, NW, Detrend, nTapers
 
 
 
@@ -387,7 +389,10 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
     # allocate memory now to avoid nasty surprises later
     stP = np.zeros((nFFT, nChannels, nChannels))
     varP = np.zeros((nFFT, nChannels, nChannels))
-    Tapers, V = dpss(WinLength, NW, nTapers, 'calc')
+    from scipy.signal.windows import dpss
+
+    Tapers, V = dpss(WinLength, NW, nTapers, return_ratios=True)
+
     Periodogram = np.zeros((nFFT, nTapers, nChannels), dtype=complex)  # intermediate FFTs
     Temp1 = np.zeros((nFFT, nTapers), dtype=complex)  # Temps are particular psd or csd values for a frequency and taper
     Temp2 = np.zeros((nFFT, nTapers), dtype=complex)
@@ -406,15 +411,25 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
     # compute tapered periodogram with FFT
     # This involves lots of wrangling with multidimensional arrays.
 
-    TaperingArray = np.tile(Tapers[:, np.newaxis, :], (1, nChannels, 1))
+    Tapers=Tapers.T
+    TaperingArray = np.tile(Tapers[:, :, np.newaxis], (1, 1, nChannels))
+
 
     for j in range(nFFTChunks):
-        start_idx = (j-1)*winstep
-        end_idx = start_idx + WinLength
-        Segment = x[start_idx:end_idx, :]
-        if Detrend is not None:
-            Segment = np.apply_along_axis(lambda x: np.squeeze(np.detrend(x, Detrend)), axis=0, arr=Segment)
-        SegmentsArray = np.transpose(np.tile(Segment, (1, nTapers, 1)), (0, 2, 1))
+        start = j * winstep
+        end = start + WinLength
+        Segment = x[start:end, :] 
+
+        if Detrend:
+            Segment = detrend(Segment, axis=0, type=Detrend)
+
+        # SegmentsArray = np.tile(Segment[None, :, :], (nTapers, 1, 1))
+
+        
+        SegmentsArray = np.tile(Segment[:, None, :], (1, nTapers, 1))
+        
+        
+        
         TaperedSegments = TaperingArray * SegmentsArray
 
         Periodogram = np.fft.fft(TaperedSegments, n=nFFT, axis=0)
@@ -446,8 +461,9 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
                 JN[j, :, Ch1, Ch2] = nFFTChunks * Py[:, Ch1, Ch2].T - (nFFTChunks-1) * np.squeeze(JN[j, :, Ch1, Ch2])
 
     # upper and lower bounds will be 2 standard deviations away
+    
+    meanP = np.mean(JN, axis=0)
     stP = np.sqrt(varP)
-
     Pupper = np.tanh(meanP + 2*stP)
     Plower = np.tanh(meanP - 2*stP)
     meanP = np.tanh(meanP)

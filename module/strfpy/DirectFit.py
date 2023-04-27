@@ -201,7 +201,8 @@ def direct_fit(params):
 
     strfFiles = [None]*len(Tol_val)
     for k in range(len(Tol_val)):
-        fname = os.path.join(outputPath, '/strfResult_Tol', str(k+1), '.npy')
+        fname = f'{outputPath}/strfResult_Tol{k+1}.npz'
+
         strfFiles[k] = fname
 
     return strfFiles

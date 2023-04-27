@@ -186,8 +186,10 @@ function [modelParams, options] = trnDirectFit(modelParams, datIdx, options, var
                 end
                 
                 %compute coherence and info across pairs
+                test=rv(rresp);
                 cStruct = compute_coherence_mean(rv(mresp), rv(rresp), options.respSampleRate, options.infoFreqCutoff, options.infoWindowSize);
                 infoSum = infoSum + cStruct.info;
+                
             end
                 
             avgInfo = infoSum / numJNStrfs;

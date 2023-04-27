@@ -1,5 +1,6 @@
 import os
 import numpy as np
+from .trnDirectFit import trnDirectFit
 
 def linInit(nIn, delays, outputNL=None, freqDom=None):
     # Set default option values
@@ -203,7 +204,7 @@ def strfData(stim, resp, groupIdx=None):
 
 
 
-def strfOpt(strf, datIdx, options, *args):
+def strfOpt(strf, datIdx, options,globDat,  *args):
     """
     strfOpt is a helper function which facilitates the training of
     STRFs. It calls any of the middle-layer training functions to
@@ -229,8 +230,9 @@ def strfOpt(strf, datIdx, options, *args):
         *varargs: additional arguments returned by the training function
     """
 
-    s = globals()[options['funcName']](strf, datIdx, options, *args)
 
+    s = globals()[options['funcName']](strf, datIdx, options, globDat, 1)
+   
     strf = s[0]
 
     if len(s) > 1:

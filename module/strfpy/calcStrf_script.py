@@ -217,9 +217,9 @@ def calcStrfs(params, CS, CSR, CSR_JN):
         
         print(f"Done calculation of STRF for tol_value: {tol}\n")
 
-        sfilename = f"strfResult_Tol{itol}.mat"
+        sfilename = f"strfResult_Tol{itol}.npz"
         strfFiles = os.path.join(outputPath, sfilename)
-        sio.savemat(strfFiles, {'STRF_Cell': STRF_Cell, 'STRFJN_Cell': STRFJN_Cell, 'STRFJNstd_Cell': STRFJNstd_Cell})
+        np.savez_compressed(strfFiles, STRF_Cell=STRF_Cell, STRFJN_Cell=STRFJN_Cell, STRFJNstd_Cell=STRFJNstd_Cell)
 
         if cache_crosscorr:
             strf_checksum = checksum_this_tol
