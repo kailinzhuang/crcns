@@ -138,7 +138,7 @@ def trnDirectFit(modelParams=None, datIdx=None, options=None, globalDat=None, *a
                 mresp = mresp + respAvg
             else:
                 mresp = mresp + tvRespAvg[p, :len(mresp)]
-
+            
             #compute coherence and info across pairs
             cStruct = compute_coherence_mean(mresp, rresp, options['respSampleRate'], options['infoFreqCutoff'], options['infoWindowSize'])
             infoSum = infoSum + cStruct['info']
@@ -195,11 +195,12 @@ def conv_strf(allstim, delays, strf, groupIndex):
     a = np.zeros((timeLen, 1), dtype=complex)
     
     for k in range(nDatasets):
-        rng = np.where(groupIndex == k+1)[0]
+        rng = np.where(groupIndex[0] == k+1)[0]
         soff = rng[0]
         stim = allstim[rng, :]
         for ti in range(len(delays)):
-            at = np.dot(stim, strf[:, ti])
+            # at = np.dot(stim, strf[:, ti])
+            at = np.matmul(stim, strf[:, ti]).T
 
             thisshift = delays[ti]
             if thisshift >= 0:
@@ -208,12 +209,15 @@ def conv_strf(allstim, delays, strf, groupIndex):
                 offset = thisshift % timeLen
                 a[soff:offset] += at[-thisshift:]
     
-    return a.T[0]
+    return a.T
 
 
 
 def compute_coherence_mean(modelResponse, psth, sampleRate, freqCutoff=-1, windowSize=0.500):
-    import numpy as np
+    
+    # reshape
+    modelResponse = modelResponse.T
+    psth = psth.reshape(len(psth), 1)
     
     # put psths in matrix for mtchd_JN
     if len(modelResponse) != len(psth):
@@ -236,10 +240,10 @@ def compute_coherence_mean(modelResponse, psth, sampleRate, freqCutoff=-1, windo
     # normalize coherencies
     cStruct = {}
     cStruct['f'] = fpxy
-    cStruct['c'] = cxyo[:, 0, 1]**2
-    cStruct['cUpper'] = cxyo_u[:, 0, 1]**2
+    cStruct['c'] = np.real(cxyo[:, 0, 1]**2)
+    cStruct['cUpper'] = np.real(cxyo_u[:, 0, 1]**2)
     
-    clo = cxyo_l[:, 0, 1]
+    clo = np.real(cxyo_l[:, 0, 1])
     closgn = np.sign(np.real(clo))
     cStruct['cLower'] = (clo**2) * closgn
     
@@ -483,7 +487,7 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
         select = np.arange(1, nFFT + 1)
 
     fo = (select - 1) * Fs / nFFT
-
+    fo = fo.reshape(len(fo), 1)
     ###### did not translate
     ######
     # if nargout == 0
@@ -536,3 +540,4 @@ def strflab2DS(allstim, allresp, groupIndex, outputPath):
         DS[k] = dfds
 
     return DS
+
