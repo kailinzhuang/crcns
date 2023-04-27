@@ -3,7 +3,7 @@ import os
 import numpy as np
 from scipy.signal.windows import dpss
 from scipy.signal import detrend
-from .strfSetup import strflab2DS
+# from .strfSetup import strflab2DS
 from .DirectFit import direct_fit
 
 def trnDirectFit(modelParams=None, datIdx=None, options=None, globalDat=None, *args, **kwargs):
@@ -506,3 +506,33 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
 
     return y, fo, meanP, Pupper, Plower, stP
 
+
+def strflab2DS(allstim, allresp, groupIndex, outputPath):
+    npairs = len(np.unique(groupIndex))
+    DS = [None]*npairs
+
+    for k in range(npairs):
+        rng = np.where(groupIndex == k)[0]
+        stim = allstim[rng, :]
+        resp = allresp[rng]
+
+        dfds = {}
+
+        # write spectrogram to intermediate file (direct fit requires this)
+        stimfile = os.path.join(outputPath, f'df_temp_stim_{k}.npy')
+        outSpectrum = stim.T
+        np.save(stimfile, outSpectrum)
+        dfds['stimfiles'] = stimfile
+
+        # write response to intermediate file
+        rfile = os.path.join(outputPath, f'df_temp_resp_{k}.npy')
+        rawResp = resp
+        np.save(rfile, rawResp)
+        dfds['respfiles'] = rfile
+
+        dfds['nlen'] = stim.shape[0]
+        dfds['ntrials'] = 1
+
+        DS[k] = dfds
+
+    return DS

@@ -133,19 +133,19 @@ def preprocess_response(spikeTrials, stimLength, sampleRate):
     return resp
 
 
-def make_psth(self, stimdur, binsize):
-
+def make_psth(spikeTrials, stimdur, binsize):
     nbins = round(stimdur / binsize)
     psth = np.zeros(nbins)
 
-    ntrials = len(self.spikeTrials)
+    ntrials = len(spikeTrials)
 
     maxIndx = round(stimdur / binsize)
 
     for k in range(ntrials):
-        stimes = self.spikeTrials[k]
-        indx = np.logical_and(stimes > 0, stimes < stimdur)
-
+        stimes = spikeTrials[k]
+        indx = np.logical_and(stimes.any() > 0, stimes.any() < stimdur)
+        indx = indx[0]
+        stimes = stimes[0][0]
         stimes = stimes[indx]
         sindxs = np.round(stimes / binsize).astype(int) + 1
 
@@ -224,3 +224,25 @@ def compute_srdata_means(srData):
     respAvg = meanSum / pairCount
 
     return stimAvg, respAvg, tvRespAvg
+
+
+def split_psth(spikeTrials, stimLengthMs):
+    spikeTrials = spikeTrials.flatten()[0]
+    halfSize = round(len(spikeTrials)/2)
+    spikeTrials1 = [None]*halfSize
+    spikeTrials2 = [None]*halfSize
+
+
+    for j, trial in enumerate(spikeTrials):
+        indx = int((j + 1) // 2)
+        if j%2 == 0:
+            spikeTrials1[indx-1] = trial
+        else:
+            spikeTrials2[indx-1] = trial
+            
+    psth = make_psth(spikeTrials, stimLengthMs, 1)
+    psth1 = make_psth(spikeTrials1, stimLengthMs, 1)
+    psth2 = make_psth(spikeTrials2, stimLengthMs, 1)
+
+    psthdata = {'psth': psth, 'psth_half1': psth1, 'psth_half2': psth2}
+    return psthdata
