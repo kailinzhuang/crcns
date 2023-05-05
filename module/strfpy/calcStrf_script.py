@@ -47,6 +47,11 @@ def calcStrfs(params, CS, CSR, CSR_JN):
 
     # checksum_fft_ACC = df_checksum(checksum_CrossCorr, round(TimeLag*ampsamprate/1000), nstd_val)
     # ---------------------
+    if TimeLagUnit == 'msec':
+        twindow = round(TimeLag*ampsamprate/1000)
+    elif TimeLagUnit == 'frame':
+        twindow = round(TimeLag)
+    nt = 2*twindow + 1
 
     cache_crosscorr = 0
     if cache_crosscorr:
@@ -55,7 +60,7 @@ def calcStrfs(params, CS, CSR, CSR_JN):
             CSR, CSR_JN, round(TimeLag*ampsamprate/1000), NBAND, nstd_val)
     else:
         fstim, fstim_spike, stim_spike_JNf = df_fft_AutoCrossCorr(
-            CS, CSR, CSR_JN, round(TimeLag*ampsamprate/1000), NBAND, nstd_val)
+            CS, CSR, CSR_JN, twindow, NBAND, nstd_val)
     print('Done df_fft_AutoCrossCorr.')
 
     # clear some memory
@@ -194,7 +199,9 @@ def calcStrfs(params, CS, CSR, CSR_JN):
         
         if not cache_crosscorr:
             if not use_more_memory:
-                STRF_Cell, STRFJN_Cell, STRFJNstd_Cell = df_cal_Strf(DF_PARAMS, fstim, fstim_spike, stim_spike_JNf, stim_size, stim_spike_size, stim_spike_JNsize, nb, nt, nJN, tol)
+                STRF_Cell, STRFJN_Cell, STRFJNstd_Cell = df_cal_Strf(
+                    DF_PARAMS, fstim, fstim_spike, stim_spike_JNf, stim_size, 
+                    stim_spike_size, stim_spike_JNsize, nb, nt, nJN, tol)
             else:
                 # [STRF_Cell, STRFJN_Cell, STRFJNstd_Cell] = df_cal_Strf_use_cache(fstim, fstim_spike, stim_spike_JNf, stim_size, stim_spike_size, stim_spike_JNsize, nb, nt, nJN, tol, big_u, big_s, big_v, max_stimnorm, big_stim_mat)
                 if not use_alien_space:
@@ -221,13 +228,13 @@ def calcStrfs(params, CS, CSR, CSR_JN):
         strfFiles = os.path.join(outputPath, sfilename)
         np.savez_compressed(strfFiles, STRF_Cell=STRF_Cell, STRFJN_Cell=STRFJN_Cell, STRFJNstd_Cell=STRFJNstd_Cell)
 
-        if cache_crosscorr:
-            strf_checksum = checksum_this_tol
-            posslash = strfFiles.rfind('/')
-            the_dir = strfFiles[:(posslash+1)]
-            the_name = strfFiles[(posslash+1):]
-            strf_hash_filename = the_dir + 'hash_of_' + the_name
-            sio.savemat(strf_hash_filename, {'strf_checksum': strf_checksum})
+        # if cache_crosscorr:
+        #     strf_checksum = checksum_this_tol
+        #     posslash = strfFiles.rfind('/')
+        #     the_dir = strfFiles[:(posslash+1)]
+        #     the_name = strfFiles[(posslash+1):]
+        #     strf_hash_filename = the_dir + 'hash_of_' + the_name
+        #     sio.savemat(strf_hash_filename, {'strf_checksum': strf_checksum})
 
         del STRF_Cell, STRFJN_Cell, STRFJNstd_Cell
 

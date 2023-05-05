@@ -383,7 +383,7 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
 
     # calculate number of FFTChunks per channel
     winstep = WinLength - nOverlap
-    nFFTChunks = ((nSamples - WinLength) // winstep)
+    nFFTChunks = round(((nSamples - WinLength) / winstep))
     # turn this into time, using the sample frequency
     t = winstep * np.arange(nFFTChunks) / Fs
 
@@ -396,6 +396,7 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
     from scipy.signal.windows import dpss
 
     Tapers, V = dpss(WinLength, NW, nTapers, return_ratios=True)
+    Tapers = Tapers.T
 
     Periodogram = np.zeros((nFFT, nTapers, nChannels), dtype=complex)  # intermediate FFTs
     Temp1 = np.zeros((nFFT, nTapers), dtype=complex)  # Temps are particular psd or csd values for a frequency and taper
@@ -415,7 +416,7 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
     # compute tapered periodogram with FFT
     # This involves lots of wrangling with multidimensional arrays.
 
-    Tapers=Tapers.T
+
     TaperingArray = np.tile(Tapers[:, :, np.newaxis], (1, 1, nChannels))
 
 

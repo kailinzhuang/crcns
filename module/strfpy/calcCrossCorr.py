@@ -219,8 +219,7 @@ def df_fft_AutoCrossCorr(stim, stim_spike, CSR_JN, TimeLag, NBAND, nstd_val):
     
     ncorr = stim.shape[0]
     nb = NBAND
-    nt = TimeLag
-    nt = 2 * nt + 1
+    nt = 2 * TimeLag + 1
     nJN = len(CSR_JN)
     
     asize = np.array([nt, nb])
@@ -246,7 +245,7 @@ def df_fft_AutoCrossCorr(stim, stim_spike, CSR_JN, TimeLag, NBAND, nstd_val):
     nf = (nt - 1) // 2 + 1
     
     stim_spike_JNvf = np.zeros((nb, nf), dtype=complex)
-    fstim = np.zeros(stim.shape)
+    fstim = np.zeros(stim.shape, dtype=complex)
     stim_spike_sf = np.zeros((nb, nt),dtype=complex)#, nJN))
     #fstim_spike = stim_spike_sf
     
@@ -284,9 +283,9 @@ def df_fft_AutoCrossCorr(stim, stim_spike, CSR_JN, TimeLag, NBAND, nstd_val):
     nt2=int((nt-1)/2)
     for i in range(ncorr):
         sh_stim = np.zeros(nt)
-        w_stim =  stim[i,:]*w.T
+        w_stim =  stim[i,:]*w
         sh_stim[:nt2+1]=w_stim[nt2:nt]
-        sh_stim[nt2:nt]=w_stim[:nt2+1]
+        sh_stim[nt2+1:nt]=w_stim[:nt2]
         fstim[i,:] = np.fft.fft(sh_stim)
     return fstim, fstim_spike, stim_spike_JNf
 

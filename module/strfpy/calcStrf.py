@@ -32,7 +32,7 @@ def df_cal_Strf(params, fstim, fstim_spike, stim_spike_JNf, stim_size, stim_spik
     ranktest = np.zeros((1, nf), dtype=np.float_)
     stimnorm = np.zeros((1, nf), dtype=np.float_)
 
-    ranktol = tol * max(stimnorm)
+  
 
     # Find the maximum norm of all the matrices
     for iff in range(nf):
@@ -40,10 +40,17 @@ def df_cal_Strf(params, fstim, fstim_spike, stim_spike_JNf, stim_size, stim_spik
         stim_mat = np.zeros((nb, nb), dtype=np.complex_)
         stim_mat[np.tril_indices(nb)] = np.conj(fstim[:, iff])
         stim_mat = stim_mat - np.diag(np.diag(stim_mat)) + stim_mat.T
+        stimnorm[0,iff] =  np.linalg.norm(stim_mat)
 
+    ranktol = tol * np.max(stimnorm)
+    for iff in range(nf):
+        # I great big thanks to Georg for the next lines, which improve speed:
+        stim_mat = np.zeros((nb, nb), dtype=np.complex_)
+        stim_mat[np.tril_indices(nb)] = np.conj(fstim[:, iff])
+        stim_mat = stim_mat - np.diag(np.diag(stim_mat)) + stim_mat.T
         nc = 1
         # cross_vect = np.zeros(nb, dtype=np.complex)
-        cross_vectJN = np.zeros((nJN, nb), dtype=np.complex_)
+        # cross_vectJN = np.zeros((nJN, nb), dtype=np.complex_)
 
         for fb_indx in range(nb):
             cross_vect[fb_indx] = fstim_spike[fb_indx,iff]
@@ -51,23 +58,31 @@ def df_cal_Strf(params, fstim, fstim_spike, stim_spike_JNf, stim_size, stim_spik
                 cross_vectJN[iJN,fb_indx] = stim_spike_JNf[fb_indx,iff,iJN]
 
         # do an svd decomposition
-        ranktest = np.zeros(1)
-        ranktest = np.linalg.matrix_rank(stim_mat, ranktol)
+        ranktest[:,] = np.linalg.matrix_rank(stim_mat, ranktol)
         u,s,v = np.linalg.svd(stim_mat)
         tots = s[0]
         cums[iff,1] = s[0] 
         
-        for ii in range(nb):
+        for ii in range(1, nb):
             tots = tots + s[ii]
-            cums[iff,ii] = cums[iff,ii] + s[ii]
+            cums[iff,ii+1] = cums[iff,ii] + s[ii]
 
         is_mat = np.zeros((nb, nb))
+        for ii in range(nb+1):
+            cums[iff,ii] = cums[iff,ii]/tots
 
+        # for ii in range(nb):
+        #     if ii > ranktest[:,0]:
+        #         is_mat[ii,ii] = (1.0/ranktol)*np.exp(-((ii-ranktest[0])**2)/8)
+        #     else:
+        #         is_mat[ii,ii] = 1.0/s[ii]
+
+
+        # ridge regression
         for ii in range(nb):
-            if ii > ranktest[0]:
-                is_mat[ii,ii] = (1.0/ranktol)*np.exp(-((ii-ranktest[0])**2)/8)
-            else:
-                is_mat[ii,ii] = 1.0/s[ii]
+            is_mat[ii,ii] = 1.0/(s[ii] + ranktol)
+        
+        # print("Ridge regression\n")
 
         h = v @ is_mat @ (u.T @ cross_vect)
         hJN = np.zeros((nJN, nb), dtype=np.complex_)

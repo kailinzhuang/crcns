@@ -60,8 +60,7 @@ def df_cal_AutoCorr(running_flag, DS, stim_avg, twindow, nband, PARAMS, JN_flag=
     
     # Do calculation. The algorithm is based on FET's dcp_stim.c
     for fidx in range(filecount):  # Loop through all data files
-
-    # do autocorrelation calculation
+        # do autocorrelation calculation
         just_load_answer = 0
         
         if cached_dir != 'null':
@@ -77,7 +76,7 @@ def df_cal_AutoCorr(running_flag, DS, stim_avg, twindow, nband, PARAMS, JN_flag=
         #     nlen = DS[fidx - 1].nlen
         else:
             # load stimulus file
-            stim_env = df_Check_And_Load(DS[fidx - 1]['stimfiles'])
+            stim_env = df_Check_And_Load(DS[fidx]['stimfiles'])
 
             nlen = np.shape(stim_env)[1]
             stimval = np.zeros((nband, nlen))
@@ -96,10 +95,15 @@ def df_cal_AutoCorr(running_flag, DS, stim_avg, twindow, nband, PARAMS, JN_flag=
         lengthVec = np.ones(nlen)
         # CS_ns[0, :] = CS_ns[0, :] + DS[fidx - 1]['ntrials'] * np.correlate(lengthVec, lengthVec, mode='same')[twindow[0]:twindow[1]]
 
-        xcorr_res = np.correlate(lengthVec, lengthVec, mode='full')
-        xcorr_res = xcorr_res[xcorr_res.size // 2:]
-        xcorr_res = xcorr_res[(twindow[0] - 1):(twindow[1])]
-        CS_ns[0, (twindow[0] - 1):(twindow[1])] += DS[fidx]['ntrials'] * xcorr_res
+        xcorr_res = np.correlate(lengthVec, lengthVec, mode="same")
+        len_xcorr = len(xcorr_res)
+        xcorr_res = xcorr_res[len_xcorr//2 + twindow[0]:len_xcorr//2 + twindow[1]+1]
+        # xcorr_res = xcorr_res[(twindow[0] - 1):(twindow[1])]
+        # CS_ns[0, (twindow[0] - 1):(twindow[1])] += DS[fidx]['ntrials'] * xcorr_res
+        CS_ns[0, :] += DS[fidx]['ntrials'] * xcorr_res
+
+
+
 
         # clear workspace
         if 'stim_env' in locals():
@@ -168,7 +172,7 @@ def df_small_autocorr4(stimval, nband, size_CS, twin, use_fourier=None):
                 c = np.real(np.fft.ifft(np.conj(savedStimFft[ib2,:])*(savedStimFft[ib1, :])))
 
                 # NEW version of algorithm by using xcorr
-                CS[xb-1, :] = np.concatenate((c[-twin:], c[:twin+1]))
+                CS[xb, :] = np.concatenate((c[-twin:], c[:twin+1]))
                 xb += 1
     else:
         st = stimval.T
@@ -176,6 +180,7 @@ def df_small_autocorr4(stimval, nband, size_CS, twin, use_fourier=None):
             onevect = slice(max(1,tid+1), min(N,N+tid))
             othervect = slice(onevect.start-tid, onevect.stop-tid)
             temp = stimval[:,onevect] @ st[othervect,:]
+            # temp = np.outer(stimval[:,onevect],st[othervect,:])
             CS[:,twin + tid] = df_uppertrivect(temp)
 
     return CS
@@ -190,10 +195,10 @@ def df_uppertrivect(in_mat):
         raise ValueError(f"Error in function df_uppertrivect: input has shape {in_mat.shape}, but it should be a square matrix.")
     
     # by rows:
-    out_vec = []
-    for jj in range(S):
-        out_vec.extend(in_mat[jj:S, jj])
-    return out_vec
+    out = []
+    for j in range(S):
+        out += list(in_mat[j:S, j])
+    return out
 
 
 
