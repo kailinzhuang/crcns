@@ -110,52 +110,47 @@ def trnDirectFit(modelParams=None, datIdx=None, options=None, globalDat=None, *a
 
         spvals = options['sparsenesses']
 
-    for q in range(len(spvals)):
-        # smooth the strf by masking it with a sigmoid-like mask, scaled by the # of deviations specified by the sparseness parameter
-        smoothedMeanStrf = df_fast_filter_filter(strfMean, strfStdMean, spvals[q])
-        smoothedMeanStrfToUse = smoothedMeanStrf[:, strfRng]
+        for q in range(len(spvals)):
+            smoothedMeanStrf = df_fast_filter_filter(strfMean, strfStdMean, spvals[q])
+            smoothedMeanStrfToUse = smoothedMeanStrf[:, strfRng]
 
-        # the following loop goes through each jacknifed strf for the given tolerance value, smooths it with the sparseness parameter, and then predicts response to it's corresponding held-out stimulus.
-        # the coherence and information values are computed and recorded, then the average info value is used to judge the goodness-of-fit for smoothedMeanStrfToUse  
-        infoSum = 0
-        numJNStrfs = numSamples
-        for p in range(numJNStrfs):
-            # jacknifed STRF p (strfsJN[:, :, p]) was constructed by holding out stim/resp pair p
-            smoothedMeanStrfJN = df_fast_filter_filter(strfsJN[:, :, p], strfsJN_std[:, :, p], spvals[q])
-            strfToUse = smoothedMeanStrfJN[:, strfRng]
-            
-            srRange = np.where(globDat['groupIdx'] == p)[0]
-            stim = globDat['stim'][srRange, :]
-            rresp = globDat['resp'][srRange]
-            gindx = np.ones((1, stim.shape[0]))
+            infoSum = 0
+            numJNStrfs = numSamples
+            for p in range(numJNStrfs):
+                smoothedMeanStrfJN = df_fast_filter_filter(strfsJN[:, :, p], strfsJN_std[:, :, p], spvals[q])
+                strfToUse = smoothedMeanStrfJN[:, strfRng]
+                
+                srRange = np.where(globDat['groupIdx'] == p)[0]
+                stim = globDat['stim'][srRange, :]
+                rresp = globDat['resp'][srRange]
+                gindx = np.ones((1, stim.shape[0]))
 
-            #compute the prediction for the held out stimulus
-            mresp = conv_strf(stim, modelParams['delays'], strfToUse, gindx)
+                #compute the prediction for the held out stimulus
+                mresp = conv_strf(stim, modelParams['delays'], strfToUse, gindx)
 
-            #add the mean back to the PSTH if necessary 
-            # Why is this not in conv_strf???
-            if not options['timeVaryingPSTH']:
-                mresp = mresp + respAvg
-            else:
-                mresp = mresp + tvRespAvg[p, :len(mresp)]
-            
-            #compute coherence and info across pairs
-            cStruct = compute_coherence_mean(mresp, rresp, options['respSampleRate'], options['infoFreqCutoff'], options['infoWindowSize'])
-            infoSum = infoSum + cStruct['info']
+                if not options['timeVaryingPSTH']:
+                    mresp = mresp + respAvg
+                else:
+                    mresp = mresp + tvRespAvg[p, :len(mresp)]
+                
+                #compute coherence and info across pairs
+                cStruct = compute_coherence_mean(mresp, rresp, options['respSampleRate'], options['infoFreqCutoff'], options['infoWindowSize'])
+                infoSum = infoSum + np.real(cStruct['info'])
         
-        avgInfo = infoSum / numJNStrfs
+            avgInfo = infoSum / numJNStrfs
 
-        print(f"Tolerance={options['tolerances'][k]}, Sparseness={spvals[q]}, Avg. Prediction Info={avgInfo}")
+            print(f"Tolerance={options['tolerances'][k]}, Sparseness={spvals[q]}, Avg. Prediction Info={avgInfo}")
 
-        # did this sparseness do better?
-        if avgInfo > bestInfoVal:
-            bestTol = options['tolerances'][k]
-            bestSparseness = spvals[q]
-            bestInfoVal = avgInfo
-            bestStrf = smoothedMeanStrfToUse
+            # did this sparseness do better?
+            if avgInfo > bestInfoVal:
+                bestTol = options['tolerances'][k]
+                bestSparseness = spvals[q]
+                bestInfoVal = avgInfo
+                bestStrf = smoothedMeanStrfToUse
                 
 
         ## get best strf
+    
     print('Best STRF found at tol=%f, sparseness=%d, info=%f bits\n' % (bestTol, bestSparseness, bestInfoVal))
     
     modelParams['w1'] = bestStrf
@@ -240,8 +235,8 @@ def compute_coherence_mean(modelResponse, psth, sampleRate, freqCutoff=-1, windo
     # normalize coherencies
     cStruct = {}
     cStruct['f'] = fpxy
-    cStruct['c'] = np.real(cxyo[:, 0, 1]**2)
-    cStruct['cUpper'] = np.real(cxyo_u[:, 0, 1]**2)
+    cStruct['c'] = cxyo[:, 0, 1]**2
+    cStruct['cUpper'] = cxyo_u[:, 0, 1]**2
     
     clo = np.real(cxyo_l[:, 0, 1])
     closgn = np.sign(np.real(clo))
@@ -249,9 +244,9 @@ def compute_coherence_mean(modelResponse, psth, sampleRate, freqCutoff=-1, windo
     
     # restrict frequencies analyzed to the requested cutoff and minimum frequency given the window size
     if freqCutoff != -1:
-        indx = np.where(cStruct['f'] < freqCutoff)[0]
-        eindx = max(indx)
-        indx = np.arange(eindx)
+        findx = np.where(cStruct['f'] < freqCutoff)[0]
+        eindx = max(findx)
+        indx = np.arange(eindx+1)
         
         cStruct['f'] = cStruct['f'][indx]
         cStruct['c'] = cStruct['c'][indx]
@@ -259,8 +254,8 @@ def compute_coherence_mean(modelResponse, psth, sampleRate, freqCutoff=-1, windo
         cStruct['cLower'] = cStruct['cLower'][indx]
     
     if minFreq > 0:
-        indx = np.where(cStruct['f'] >= minFreq)[0]
-        sindx = min(indx)
+        findx = np.where(cStruct['f'] >= minFreq)[0]
+        sindx = min(findx)
         cStruct['f'] = cStruct['f'][sindx:]
         cStruct['c'] = cStruct['c'][sindx:]
         cStruct['cUpper'] = cStruct['cUpper'][sindx:]
@@ -361,14 +356,15 @@ def df_mtparam(*varg):
 
 
 def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend=None, nTapers=None):
-    if WinLength is None:
-        WinLength = nFFT
-    if nOverlap is None:
-        nOverlap = WinLength // 2
-    if nTapers is None:
-        nTapers = 2 * NW - 1
+    # if WinLength is None:
+    #     WinLength = nFFT
+    # if nOverlap is None:
+    #     nOverlap = WinLength // 2
+    # if nTapers is None:
+    #     nTapers = 2 * NW - 1
 
     WinLength = int(WinLength)
+    winstep = int(WinLength - nOverlap)
     nOverlap = int(nOverlap)
     nFFT = int(nFFT)
 
@@ -382,10 +378,10 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
         nChannels = 1
 
     # calculate number of FFTChunks per channel
-    winstep = WinLength - nOverlap
+ 
     nFFTChunks = round(((nSamples - WinLength) / winstep))
     # turn this into time, using the sample frequency
-    t = winstep * np.arange(nFFTChunks) / Fs
+    t = winstep * np.arange(nFFTChunks-1).T / Fs
 
     # calculate Slepian sequences. Tapers is a matrix of size [WinLength, nTapers]
 
@@ -393,6 +389,7 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
     # allocate memory now to avoid nasty surprises later
     stP = np.zeros((nFFT, nChannels, nChannels))
     varP = np.zeros((nFFT, nChannels, nChannels))
+    
     from scipy.signal.windows import dpss
 
     Tapers, V = dpss(WinLength, NW, nTapers, return_ratios=True)
@@ -418,26 +415,19 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
 
 
     TaperingArray = np.tile(Tapers[:, :, np.newaxis], (1, 1, nChannels))
-
-
     for j in range(nFFTChunks):
-        start = j * winstep
-        end = start + WinLength
-        Segment = x[start:end, :] 
+        Segment = x[j*winstep:j*winstep+WinLength, :]
 
-        if Detrend:
+        if bool(Detrend):
             Segment = detrend(Segment, axis=0, type=Detrend)
 
         # SegmentsArray = np.tile(Segment[None, :, :], (nTapers, 1, 1))
-
-        
+        # SegmentsArray = np.transpose(np.tile(Segment, (1, 1, nTapers)), (0, 2, 1))
         SegmentsArray = np.tile(Segment[:, None, :], (1, nTapers, 1))
-        
-        
-        
+
         TaperedSegments = TaperingArray * SegmentsArray
 
-        Periodogram = np.fft.fft(TaperedSegments, n=nFFT, axis=0)
+        Periodogram[:,:,:] = np.fft.fft(TaperedSegments, n=nFFT, axis=0)
 
         for Ch1 in range(nChannels):
             for Ch2 in range(Ch1, nChannels):
@@ -468,46 +458,36 @@ def df_mtchd_JN(x, nFFT=1024, Fs=2, WinLength=None, nOverlap=None, NW=3, Detrend
     # upper and lower bounds will be 2 standard deviations away
     
     meanP = np.mean(JN, axis=0)
+    for Ch1 in range(nChannels):
+        for Ch2 in range(Ch1,nChannels):
+            varP[:, Ch1, Ch2] = (1/nFFTChunks) * np.var(JN[:, :, Ch1, Ch2], axis=0)
+
     stP = np.sqrt(varP)
-    Pupper = np.tanh(meanP + 2*stP)
-    Plower = np.tanh(meanP - 2*stP)
+    
+    Pupper = meanP + 2*stP
+    Plower = meanP - 2*stP
     meanP = np.tanh(meanP)
+    Pupper = np.tanh(Pupper)
+    Plower = np.tanh(Plower)
 
     # set up f array
-    if not np.any(np.any(np.imag(x))):
+    # if not np.any(np.any(np.imag(x))):
+    if np.all(np.isreal(x)):
         # x purely real
         if nFFT % 2 == 1:  # nfft odd
-            select = np.arange(1, (nFFT + 1) // 2 + 1)
+            select = np.arange((nFFT + 1) // 2 + 1)
         else:
-            select = np.arange(1, nFFT // 2 + 2)
+            select = np.arange(nFFT // 2 + 1)
         meanP = meanP[select, :, :]
         Pupper = Pupper[select, :, :]
         Plower = Plower[select, :, :]
         y = y[select, :, :]
     else:
-        select = np.arange(1, nFFT + 1)
+        select = np.arange(nFFT)
 
-    fo = (select - 1) * Fs / nFFT
+    fo = select * Fs / nFFT
     fo = fo.reshape(len(fo), 1)
-    ###### did not translate
-    ######
-    # if nargout == 0
-    #     % take abs, and plot results
-    #     newplot;
-    #     for Ch1=1:nChannels, 
-    #         for Ch2 = 1:nChannels
-    #             subplot(nChannels, nChannels, Ch1 + (Ch2-1)*nChannels);
-    #             plot(f,20*log10(abs(y(:,Ch1,Ch2))+eps));
-    #             grid on;
-    #             if(Ch1==Ch2) 
-    #                 ylabel('psd (dB)'); 
-    #             else 
-    #                 ylabel('csd (dB)'); 
-    #             end;
-    #             xlabel('Frequency');
-    #         end
-    #     end
-    # end
+
 
     return y, fo, meanP, Pupper, Plower, stP
 

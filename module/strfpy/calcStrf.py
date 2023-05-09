@@ -30,24 +30,22 @@ def df_cal_Strf(params, fstim, fstim_spike, stim_spike_JNf, stim_size, stim_spik
     strfHJN = np.zeros(stim_spike_JNsize, dtype=np.complex_)
     cums = np.zeros((nf, nb+1), dtype=np.float_)
     ranktest = np.zeros((1, nf), dtype=np.float_)
-    stimnorm = np.zeros((1, nf), dtype=np.float_)
-
-  
+    stimnorm = np.zeros((1, nf), dtype=np.float_)  
 
     # Find the maximum norm of all the matrices
     for iff in range(nf):
-        # I great big thanks to Georg for the next lines, which improve speed:
         stim_mat = np.zeros((nb, nb), dtype=np.complex_)
-        stim_mat[np.tril_indices(nb)] = np.conj(fstim[:, iff])
-        stim_mat = stim_mat - np.diag(np.diag(stim_mat)) + stim_mat.T
+        stim_mat[np.tril_indices(nb, k=0, m=nb)] = np.conj(fstim[:, iff])
+        stim_mat -= np.diag(np.diag(stim_mat)) + np.transpose(stim_mat)
+
         stimnorm[0,iff] =  np.linalg.norm(stim_mat)
 
     ranktol = tol * np.max(stimnorm)
     for iff in range(nf):
-        # I great big thanks to Georg for the next lines, which improve speed:
         stim_mat = np.zeros((nb, nb), dtype=np.complex_)
-        stim_mat[np.tril_indices(nb)] = np.conj(fstim[:, iff])
-        stim_mat = stim_mat - np.diag(np.diag(stim_mat)) + stim_mat.T
+        stim_mat[np.tril_indices(nb, k=0, m=nb)] = np.conj(fstim[:, iff])
+        stim_mat -= np.diag(np.diag(stim_mat)) + np.transpose(stim_mat)
+
         nc = 1
         # cross_vect = np.zeros(nb, dtype=np.complex)
         # cross_vectJN = np.zeros((nJN, nb), dtype=np.complex_)
@@ -71,11 +69,11 @@ def df_cal_Strf(params, fstim, fstim_spike, stim_spike_JNf, stim_size, stim_spik
         for ii in range(nb+1):
             cums[iff,ii] = cums[iff,ii]/tots
 
-        # for ii in range(nb):
-        #     if ii > ranktest[:,0]:
-        #         is_mat[ii,ii] = (1.0/ranktol)*np.exp(-((ii-ranktest[0])**2)/8)
-        #     else:
-        #         is_mat[ii,ii] = 1.0/s[ii]
+        for ii in range(nb):
+            if ii > ranktest[:,0]:
+                is_mat[ii,ii] = (1.0/ranktol)*np.exp(-((ii-ranktest[0])**2)/8)[0]
+            else:
+                is_mat[ii,ii] = 1.0/s[ii]
 
 
         # ridge regression
